@@ -2,6 +2,7 @@ import type { StateCreator } from 'zustand';
 
 export type ModalType = 'import' | 'export' | 'settings' | null;
 export type SidebarTab = 'roster' | 'sections';
+export type Theme = 'light' | 'dark';
 
 export interface UISlice {
   selectedSeatIds: string[];
@@ -10,6 +11,7 @@ export interface UISlice {
   stageOffsetX: number;
   stageOffsetY: number;
   activeModal: ModalType;
+  theme: Theme;
 
   selectSeat: (id: string, multi?: boolean) => void;
   deselectAll: () => void;
@@ -18,6 +20,8 @@ export interface UISlice {
   setStageOffset: (x: number, y: number) => void;
   openModal: (modal: ModalType) => void;
   closeModal: () => void;
+  setTheme: (theme: Theme) => void;
+  toggleTheme: () => void;
 }
 
 export const createUISlice: StateCreator<UISlice, [], [], UISlice> = (set) => ({
@@ -27,6 +31,7 @@ export const createUISlice: StateCreator<UISlice, [], [], UISlice> = (set) => ({
   stageOffsetX: 0,
   stageOffsetY: 0,
   activeModal: null,
+  theme: (typeof localStorage !== 'undefined' && localStorage.getItem('theme') as Theme) || 'light',
 
   selectSeat: (id, multi = false) =>
     set((state) => {
@@ -52,4 +57,20 @@ export const createUISlice: StateCreator<UISlice, [], [], UISlice> = (set) => ({
   openModal: (modal) => set({ activeModal: modal }),
 
   closeModal: () => set({ activeModal: null }),
+
+  setTheme: (theme) => {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('theme', theme);
+    }
+    return set({ theme });
+  },
+
+  toggleTheme: () =>
+    set((state) => {
+      const newTheme: Theme = state.theme === 'light' ? 'dark' : 'light';
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('theme', newTheme);
+      }
+      return { theme: newTheme };
+    }),
 });

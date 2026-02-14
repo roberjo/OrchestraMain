@@ -1,6 +1,5 @@
 import { Rect, Arc, Text } from 'react-konva';
 import type { LayoutConfig } from '@/types/layout.ts';
-import { degToRad } from '@/engine/arcGeometry.ts';
 
 interface StageBackgroundProps {
   config: LayoutConfig;

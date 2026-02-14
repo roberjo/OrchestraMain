@@ -1,5 +1,6 @@
 import type { StateCreator } from 'zustand';
 import type { Musician } from '@/types/musician.ts';
+import type { ExampleOrchestraConfig } from '@/utils/exampleData.ts';
 
 export interface RosterSlice {
   musicians: Record<string, Musician>;
@@ -8,6 +9,7 @@ export interface RosterSlice {
   removeMusician: (id: string) => void;
   updateMusician: (id: string, updates: Partial<Musician>) => void;
   importMusicians: (musicians: Musician[]) => void;
+  loadExample: (example: ExampleOrchestraConfig) => void;
   clearRoster: () => void;
 }
 
@@ -37,6 +39,15 @@ export const createRosterSlice: StateCreator<RosterSlice, [], [], RosterSlice> =
     set(() => {
       const record: Record<string, Musician> = {};
       for (const m of musicians) {
+        record[m.id] = m;
+      }
+      return { musicians: record };
+    }),
+
+  loadExample: (example) =>
+    set(() => {
+      const record: Record<string, Musician> = {};
+      for (const m of example.musicians) {
         record[m.id] = m;
       }
       return { musicians: record };
