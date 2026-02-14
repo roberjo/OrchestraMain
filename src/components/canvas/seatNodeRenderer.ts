@@ -9,7 +9,10 @@ export function drawSeatNodes(
   positions: Record<string, SeatPosition>,
   selectedSeatIds: Set<string>,
   seatRadius: number,
-  onSelect: (musicianId: string) => void
+  onSelect: (musicianId: string) => void,
+  onDragStart?: (musicianId: string, x: number, y: number) => void,
+  onDragMove?: (x: number, y: number) => void,
+  onDragEnd?: () => void
 ) {
   const borderColor = getComputedStyle(document.documentElement).getPropertyValue('--color-border-light').trim() || '#e5e7eb';
 
@@ -29,10 +32,24 @@ export function drawSeatNodes(
       stroke: isSelected ? '#fbbf24' : borderColor,
       strokeWidth: isSelected ? 3 : 2,
       opacity: 0.85,
+      draggable: true,
     });
     
-    circle.on('click', () => {
+    circle.on('click', (e) => {
+      e.cancelBubble = true;
       onSelect(musician.id);
+    });
+
+    circle.on('dragstart', () => {
+      onDragStart?.(musician.id, circle.x(), circle.y());
+    });
+
+    circle.on('dragmove', () => {
+      onDragMove?.(circle.x(), circle.y());
+    });
+
+    circle.on('dragend', () => {
+      onDragEnd?.();
     });
     
     layer.add(circle);
@@ -48,6 +65,7 @@ export function drawSeatNodes(
       width: seatRadius * 2 - 8,
       align: 'center',
       ellipsis: true,
+      pointerEvents: 'none',
     });
     layer.add(nameText);
 
@@ -63,6 +81,7 @@ export function drawSeatNodes(
         width: seatRadius * 2 - 8,
         align: 'center',
         opacity: 0.7,
+        pointerEvents: 'none',
       });
       layer.add(chairText);
     }

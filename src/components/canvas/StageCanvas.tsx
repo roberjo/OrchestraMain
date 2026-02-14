@@ -1,6 +1,7 @@
 import { useEffect, useRef, useMemo } from 'react';
 import Konva from 'konva';
 import { useStore } from '@/store/index.ts';
+import { useDragSeat } from '@/hooks/useDragSeat.ts';
 import { drawStageBackground } from './stageBackgroundRenderer.ts';
 import { drawConductorMarker } from './conductorMarkerRenderer.ts';
 import { drawSeatNodes } from './seatNodeRenderer.ts';
@@ -27,6 +28,8 @@ export function StageCanvas({ width, height }: StageCanvasProps) {
   const stageOffsetY = useStore((s) => s.stageOffsetY);
   const setZoom = useStore((s) => s.setZoom);
   const setStageOffset = useStore((s) => s.setStageOffset);
+
+  const { handleDragStart, handleDragMove, handleDragEnd } = useDragSeat();
 
   // Group musicians by section
   const sectionGroups = useMemo(() => {
@@ -141,6 +144,9 @@ export function StageCanvas({ width, height }: StageCanvasProps) {
       new Set(selectedSeatIds),
       layoutConfig.seatRadius,
       selectSeat,
+      handleDragStart,
+      handleDragMove,
+      handleDragEnd,
     );
 
     layer.batchDraw();
