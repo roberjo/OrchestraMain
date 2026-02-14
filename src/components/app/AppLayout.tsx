@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStore } from '@/store/index.ts';
 import { StageCanvas } from '@/components/canvas/StageCanvas.tsx';
+import { PropertiesPanel } from '@/components/properties/PropertiesPanel.tsx';
 import { useAutoLayout } from '@/hooks/useAutoLayout.ts';
 import { EXAMPLE_ORCHESTRAS } from '@/utils/exampleData.ts';
 
@@ -126,8 +127,8 @@ export function AppLayout() {
         )}
       </main>
 
-      {/* Right Properties Panel (shown when seat selected) */}
-      {/* Will be conditionally rendered in Phase 4 */}
+      {/* Right Properties Panel */}
+      {musicianCount > 0 && <PropertiesPanel />}
     </div>
   );
 }
