@@ -4,6 +4,7 @@ import { ImportWizard } from '@/components/import/ImportWizard.tsx';
 import { ThemeProvider } from '@/components/shared/ThemeProvider.tsx';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts.ts';
 import { useAutoHistory } from '@/hooks/useAutoHistory.ts';
+import { useAutoSave } from '@/hooks/useAutoSave.ts';
 import { useStore } from '@/store/index.ts';
 
 export function App() {
@@ -15,6 +16,9 @@ export function App() {
 
   // Automatically capture layout changes to history
   useAutoHistory();
+
+  // Automatically save project to localStorage
+  useAutoSave();
 
   return (
     <ThemeProvider>

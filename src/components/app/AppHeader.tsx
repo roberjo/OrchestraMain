@@ -1,10 +1,14 @@
+import { useRef } from 'react';
 import { useStore } from '@/store/index.ts';
 import { LAYOUT_PRESETS } from '@/engine/layoutPresets.ts';
 import { EXAMPLE_ORCHESTRAS } from '@/utils/exampleData.ts';
 import { ThemeToggle } from '@/components/shared/ThemeToggle.tsx';
+import { serializeProject, exportProjectAsJSON, downloadJSON, getDownloadFilename, deserializeProject } from '@/utils/projectSerializer.ts';
 import type { LayoutType } from '@/types/layout.ts';
 
 export function AppHeader() {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const projectName = useStore((s) => s.projectName);
   const layoutType = useStore((s) => s.layoutType);
   const setProjectName = useStore((s) => s.setProjectName);
@@ -12,10 +16,55 @@ export function AppHeader() {
   const openModal = useStore((s) => s.openModal);
   const musicianCount = useStore((s) => Object.keys(s.musicians).length);
   const loadExample = useStore((s) => s.loadExample);
+  const importMusicians = useStore((s) => s.importMusicians);
+  const setSeatPositions = useStore((s) => s.setSeatPositions);
+  const updateLayoutConfig = useStore((s) => s.updateLayoutConfig);
+  const musicians = useStore((s) => s.musicians);
+  const seatPositions = useStore((s) => s.seatPositions);
+  const layoutConfig = useStore((s) => s.layoutConfig);
 
   const handleLoadExample = (key: 'american' | 'band' | 'chamber') => {
     loadExample(EXAMPLE_ORCHESTRAS[key]);
     setProjectName(EXAMPLE_ORCHESTRAS[key].name);
+  };
+
+  const handleSaveProject = () => {
+    try {
+      const snapshot = serializeProject(projectName, layoutType, musicians, seatPositions, layoutConfig);
+      const json = exportProjectAsJSON(snapshot);
+      const filename = getDownloadFilename(projectName);
+      downloadJSON(filename, json);
+    } catch (error) {
+      alert(`Failed to save project: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
+
+  const handleLoadProject = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string;
+        const snapshot = deserializeProject(content);
+
+        // Restore project state
+        setProjectName(snapshot.name);
+        setLayoutType(snapshot.layoutType as LayoutType);
+        importMusicians(snapshot.musicians);
+        setSeatPositions(snapshot.seatPositions);
+        updateLayoutConfig(snapshot.layoutConfig);
+      } catch (error) {
+        alert(`Failed to load project: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    };
+    reader.readAsText(file);
+
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   return (
@@ -94,6 +143,28 @@ export function AppHeader() {
           <span>📤</span>
           Import
         </button>
+        <button
+          onClick={handleSaveProject}
+          className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-br from-[var(--color-accent-500)] to-[var(--color-accent-600)] px-4 py-2 text-sm font-semibold text-white hover:shadow-lg transition-all hover:translate-y-[-1px] active:translate-y-[0]"
+        >
+          <span>💾</span>
+          Save
+        </button>
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-border-medium)] bg-[var(--color-bg-primary)] px-4 py-2 text-sm font-semibold text-[var(--color-text-primary)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
+        >
+          <span>📂</span>
+          Load
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".json"
+          onChange={handleLoadProject}
+          className="hidden"
+          aria-label="Load project file"
+        />
         <button
           onClick={() => openModal('export')}
           className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-border-medium)] bg-[var(--color-bg-primary)] px-4 py-2 text-sm font-semibold text-[var(--color-text-primary)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
