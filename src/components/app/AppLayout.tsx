@@ -1,4 +1,7 @@
+import { useEffect, useRef, useState } from 'react';
 import { useStore } from '@/store/index.ts';
+import { StageCanvas } from '@/components/canvas/StageCanvas.tsx';
+import { useAutoLayout } from '@/hooks/useAutoLayout.ts';
 import { EXAMPLE_ORCHESTRAS } from '@/utils/exampleData.ts';
 
 export function AppLayout() {
@@ -6,6 +9,31 @@ export function AppLayout() {
   const openModal = useStore((s) => s.openModal);
   const setProjectName = useStore((s) => s.setProjectName);
   const loadExample = useStore((s) => s.loadExample);
+  
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
+  const [containerDimensions, setContainerDimensions] = useState({ width: 800, height: 600 });
+
+  // Trigger auto-layout whenever musicians change
+  useAutoLayout();
+
+  // Measure canvas container dimensions
+  useEffect(() => {
+    const container = canvasContainerRef.current;
+    if (!container) return;
+
+    const updateDimensions = () => {
+      setContainerDimensions({
+        width: container.clientWidth,
+        height: container.clientHeight,
+      });
+    };
+
+    updateDimensions();
+    const resizeObserver = new ResizeObserver(updateDimensions);
+    resizeObserver.observe(container);
+
+    return () => resizeObserver.disconnect();
+  }, []);
 
   const handleLoadExample = (key: 'american' | 'band' | 'chamber') => {
     loadExample(EXAMPLE_ORCHESTRAS[key]);
@@ -32,7 +60,7 @@ export function AppLayout() {
       </aside>
 
       {/* Center Canvas */}
-      <main className="flex flex-1 items-center justify-center bg-gradient-to-br from-[var(--color-bg-primary)] to-[var(--color-bg-secondary)]">
+      <main className="flex flex-1 items-center justify-center bg-gradient-to-br from-[var(--color-bg-primary)] to-[var(--color-bg-secondary)]" ref={canvasContainerRef}>
         {musicianCount === 0 ? (
           <div className="w-full max-w-lg rounded-2xl bg-[var(--color-bg-primary)] p-8 shadow-xl border border-[var(--color-border-light)]">
             <div className="mb-6 text-center">
@@ -94,12 +122,7 @@ export function AppLayout() {
             </div>
           </div>
         ) : (
-          <div className="text-center">
-            <div className="mb-3 inline-flex items-center justify-center h-20 w-20 rounded-full bg-gradient-to-br from-[var(--color-primary-500)] to-[var(--color-accent-500)]">
-              <span className="text-5xl">🎼</span>
-            </div>
-            <p className="text-sm text-[var(--color-text-secondary)]">Canvas ready for {musicianCount} musicians</p>
-          </div>
+          <StageCanvas width={containerDimensions.width} height={containerDimensions.height} />
         )}
       </main>
 
