@@ -31,7 +31,7 @@ export const createUISlice: StateCreator<UISlice, [], [], UISlice> = (set) => ({
   stageOffsetX: 0,
   stageOffsetY: 0,
   activeModal: null,
-  theme: (typeof localStorage !== 'undefined' && localStorage.getItem('theme') as Theme) || 'light',
+  theme: getInitialTheme(),
 
   selectSeat: (id, multi = false) =>
     set((state) => {
@@ -74,3 +74,11 @@ export const createUISlice: StateCreator<UISlice, [], [], UISlice> = (set) => ({
       return { theme: newTheme };
     }),
 });
+
+// Helper function to get initial theme that matches what's set in index.html
+function getInitialTheme(): Theme {
+  if (typeof document === 'undefined') return 'light';
+  
+  const isDarkMode = document.documentElement.classList.contains('dark');
+  return isDarkMode ? 'dark' : 'light';
+}
