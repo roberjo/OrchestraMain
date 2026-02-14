@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orchestra Optimizer - Band Layout Tool</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-top: 0;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            padding: 15px;
+            background: #ecf0f1;
+            border-radius: 8px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+        
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #229954;
+        }
+        
+        .btn-warning {
+            background: #f39c12;
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background: #e67e22;
+        }
+        
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+        }
+        
+        .sidebar {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            height: fit-content;
+        }
+        
+        .sidebar-section {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .sidebar-section h3 {
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+        
+        .instrument-input {
+            display: grid;
+            grid-template-columns: 1fr 80px;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        
+        .instrument-input label {
+            font-size: 14px;
+        }
+        
+        .instrument-input input {
+            padding: 5px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            width: 100%;
+        }
+        
+        .file-upload {
+            margin-bottom: 15px;
+        }
+        
+        .file-upload input {
+            width: 100%;
+            padding: 10px;
+            border: 2px dashed #3498db;
+            border-radius: 5px;
+            background: white;
+        }
+        
+        .canvas-container {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            overflow-x: auto;
+        }
+        
+        #orchestraCanvas {
+            display: block;
+            margin: 0 auto;
+            background: #ffffff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            cursor: grab;
+        }
+        
+        #orchestraCanvas:active {
+            cursor: grabbing;
+        }
+        
+        .status-bar {
+            margin-top: 10px;
+            padding: 10px;
+            background: #e8f4f8;
+            border-radius: 5px;
+            font-size: 14px;
+            color: #2c3e50;
+        }
+        
+        .project-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+        }
+        
+        .project-item {
+            padding: 8px;
+            margin-bottom: 5px;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .project-item:hover {
+            background: #e9ecef;
+        }
+        
+        .project-item button {
+            padding: 2px 8px;
+            font-size: 12px;
+        }
+        
+        .print-layout {
+            display: none;
+        }
+        
+        @media print {
+            .toolbar, .sidebar, .status-bar {
+                display: none;
+            }
+            .main-content {
+                display: block;
+            }
+            .canvas-container {
+                border: none;
+                padding: 0;
+            }
+            #orchestraCanvas {
+                max-width: 100%;
+                height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 Orchestra Optimizer - Band Layout Tool</h1>
+        
+        <div class="toolbar">
+            <button class="btn btn-primary" onclick="createNewProject()">New Project</button>
+            <button class="btn btn-success" onclick="saveProject()">Save Project</button>
+            <button class="btn btn-warning" onclick="loadProject()">Load Project</button>
+            <button class="btn btn-primary" onclick="exportProject()">Export JSON</button>
+            <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importProject(this)">
+            <button class="btn btn-primary" onclick="document.getElementById('importFile').click()">Import JSON</button>
+            <button class="btn btn-danger" onclick="window.print()">Print Layout</button>
+            <button class="btn btn-success" onclick="exportPNG()">Export PNG</button>
+        </div>
+        
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="sidebar-section">
+                    <h3>Project Info</h3>
+                    <input type="text" id="projectName" placeholder="Project Name" value="Untitled Project" style="width: 100%; padding: 8px; margin-bottom: 10px;">
+                    <select id="ensembleType" style="width: 100%; padding: 8px;">
+                        <option value="orchestra">Orchestra</option>
+                        <option value="concertBand">Concert Band</option>
+                        <option value="jazzBand">Jazz Band</option>
+                    </select>
+                </div>
+                
+                <div class="sidebar-section">
+                    <h3>Upload Roster (CSV)</h3>
+                    <div class="file-upload">
+                        <input type="file" id="csvUpload" accept=".csv" onchange="handleCSVUpload(this)">
+                    </div>
+                    <p style="font-size: 12px; color: #666;">CSV format: Name,Instrument,Part (optional)</p>
+                </div>
+                
+                <div class="sidebar-section">
+                    <h3>Instrumentation</h3>
+                    <div id="instrumentInputs">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                    <button class="btn btn-primary" style="width: 100%; margin-top: 10px;" onclick="generateLayout()">Generate Layout</button>
+                </div>
+                
+                <div class="sidebar-section">
+                    <h3>Saved Projects</h3>
+                    <div id="projectList" class="project-list">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="canvas-container">
+                <canvas id="orchestraCanvas" width="800" height="600"></canvas>
+            </div>
+        </div>
+        
+        <div class="status-bar" id="statusBar">
+            Ready. Enter instrumentation and click Generate Layout.
+        </div>
+    </div>
+    
+    <script>
+        // Orchestra Layout Tool - Complete Implementation
+        
+        // State Management
+        let currentProject = {
+            id: Date.now(),
+            name: 'Untitled Project',
+            ensembleType: 'orchestra',
+            instrumentation: {
+                // Strings
+                violin1: 8,
+                violin2: 6,
+                viola: 4,
+                cello: 3,
+                bass: 2,
+                // Woodwinds
+                flute: 2,
+                oboe: 2,
+                clarinet: 2,
+                bassoon: 2,
+                // Brass
+                trumpet: 2,
+                horn: 2,
+                trombone: 2,
+                tuba: 1,
+                // Percussion
+                percussion: 2,
+                timpani: 1
+            },
+            musicians: [],
+            seats: [],
+            draggedSeat: null,
+            dragOffset: { x: 0, y: 0 }
+        };
+        
+        let projects = [];
+        let canvas, ctx;
+        let isDragging = false;
+        let selectedSeat = null;
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            canvas = document.getElementById('orchestraCanvas');
+            ctx = canvas.getContext('2d');
+            
+            loadProjectsFromStorage();
+            renderInstrumentInputs();
+            setupCanvasEvents();
+            updateProjectList();
+            generateLayout(); // Generate default layout
+        });
+        
+        // Instrument definitions
+        const instrumentDefinitions = {
+            // Strings
+            violin1: { label: 'Violin I', color: '#e74c3c', section: 'strings' },
+            violin2: { label: 'Violin II', color: '#c0392b', section: 'strings' },
+            viola: { label: 'Viola', color: '#27ae60', section: 'strings' },
+            cello: { label: 'Cello', color: '#2980b9', section: 'strings' },
+            bass: { label: 'Bass', color: '#8e44ad', section: 'strings' },
+            // Woodwinds
+            flute: { label: 'Flute', color: '#f39c12', section: 'woodwinds' },
+            oboe: { label: 'Oboe', color: '#d35400', section: 'woodwinds' },
+            clarinet: { label: 'Clarinet', color: '#f1c40f', section: 'woodwinds' },
+            bassoon: { label: 'Bassoon', color: '#16a085', section: 'woodwinds' },
+            // Brass
+            trumpet: { label: 'Trumpet', color: '#e67e22', section: 'brass' },
+            horn: { label: 'French Horn', color: '#d35400', section: 'brass' },
+            trombone: { label: 'Trombone', color: '#bdc3c7', section: 'brass' },
+            tuba: { label: 'Tuba', color: '#95a5a6', section: 'brass' },
+            // Percussion
+            percussion: { label: 'Percussion', color: '#34495e', section: 'percussion' },
+            timpani: { label: 'Timpani', color: '#2c3e50', section: 'percussion' }
+        };
+        
+        // Render instrument input fields
+        function renderInstrumentInputs() {
+            const container = document.getElementById('instrumentInputs');
+            container.innerHTML = '';
+            
+            for (let [key, def] of Object.entries(instrumentDefinitions)) {
+                const div = document.createElement('div');
+                div.className = 'instrument-input';
+                div.innerHTML = `
+                    <label>${def.label}:</label>
+                    <input type="number" id="inst_${key}" min="0" max="20" value="${currentProject.instrumentation[key] || 0}">
+                `;
+                container.appendChild(div);
+            }
+        }
+        
+        // Update instrumentation from inputs
+        function updateInstrumentationFromInputs() {
+            for (let key of Object.keys(instrumentDefinitions)) {
+                const input = document.getElementById(`inst_${key}`);
+                if (input) {
+                    currentProject.instrumentation[key] = parseInt(input.value) || 0;
+                }
+            }
+        }
+        
+        // Intelligent Layout Algorithm
+        function generateLayout() {
+            updateInstrumentationFromInputs();
+            currentProject.ensembleType = document.getElementById('ensembleType').value;
+            currentProject.name = document.getElementById('projectName').value;
+            
+            const seats = [];
+            let seatId = 0;
+            
+            // Layout parameters
+            const startX = 100;
+            const startY = 100;
+            const seatRadius = 20;
+            const spacing = 50;
+            
+            // Different layouts based on ensemble type
+            if (currentProject.ensembleType === 'orchestra') {
+                // Orchestra layout - Strings in front, then woodwinds, then brass, percussion in back
+                
+                // Strings section (front)
+                let x = startX;
+                let y = startY;
+                const stringOrder = ['violin1', 'violin2', 'viola', 'cello', 'bass'];
+                
+                for (let instrument of stringOrder) {
+                    const count = currentProject.instrumentation[instrument] || 0;
+                    for (let i = 0; i < count; i++) {
+                        seats.push({
+                            id: seatId++,
+                            instrument: instrument,
+                            label: instrumentDefinitions[instrument].label,
+                            x: x + (i * spacing),
+                            y: y,
+                            musician: currentProject.musicians.find(m => m.instrument === instrument && !m.assigned) || null
+                        });
+                        
+                        if (i === count - 1) {
+                            x = startX;
+                            y += spacing;
+                        }
+                    }
+                }
+                
+                // Woodwinds (second row)
+                y += spacing;
+                x = startX + 100;
+                const woodwindOrder = ['flute', 'oboe', 'clarinet', 'bassoon'];
+                
+                for (let instrument of woodwindOrder) {
+                    const count = currentProject.instrumentation[instrument] || 0;
+                    for (let i = 0; i < count; i++) {
+                        seats.push({
+                            id: seatId++,
+                            instrument: instrument,
+                            label: instrumentDefinitions[instrument].label,
+                            x: x + (i * spacing),
+                            y: y,
+                            musician: currentProject.musicians.find(m => m.instrument === instrument && !m.assigned) || null
+                        });
+                    }
+                    x += (count * spacing) + spacing;
+                }
+                
+                // Brass (third row)
+                y += spacing;
+                x = startX + 150;
+                const brassOrder = ['trumpet', 'horn', 'trombone', 'tuba'];
+                
+                for (let instrument of brassOrder) {
+                    const count = currentProject.instrumentation[instrument] || 0;
+                    for (let i = 0; i < count; i++) {
+                        seats.push({
+                            id: seatId++,
+                            instrument: instrument,
+                            label: instrumentDefinitions[instrument].label,
+                            x: x + (i * spacing),
+                            y: y,
+                            musician: currentProject.musicians.find(m => m.instrument === instrument && !m.assigned) || null
+                        });
+                    }
+                    x += (count * spacing) + spacing;
+                }
+                
+                // Percussion (back row)
+                y += spacing;
+                x = startX + 200;
+                const percussionOrder = ['timpani', 'percussion'];
+                
+                for (let instrument of percussionOrder) {
+                    const count = currentProject.instrumentation[instrument] || 0;
+                    for (let i = 0; i < count; i++) {
+                        seats.push({
+                            id: seatId++,
+                            instrument: instrument,
+                            label: instrumentDefinitions[instrument].label,
+                            x: x + (i * spacing),
+                            y: y,
+                            musician: currentProject.musicians.find(m => m.instrument === instrument && !m.assigned) || null
+                        });
+                    }
+                    x += (count * spacing) + spacing;
+                }
+            } else {
+                // Concert Band layout - Different arrangement
+                // (Simplified for demo - can be expanded)
+                let x = startX;
+                let y = startY;
+                
+                for (let [instrument, count] of Object.entries(currentProject.instrumentation)) {
+                    if (count > 0) {
+                        for (let i = 0; i < count; i++) {
+                            seats.push({
+                                id: seatId++,
+                                instrument: instrument,
+                                label: instrumentDefinitions[instrument]?.label || instrument,
+                                x: x + (i * spacing),
+                                y: y,
+                                musician: currentProject.musicians.find(m => m.instrument === instrument && !m.assigned) || null
+                            });
+                        }
+                        x += spacing * 2;
+                        if (x > 600) {
+                            x = startX;
+                            y += spacing;
+                        }
+                    }
+                }
+            }
+            
+            currentProject.seats = seats;
+            drawLayout();
+            updateStatus(`Generated layout with ${seats.length} seats`);
+        }
+        
+        // Draw the layout on canvas
+        function drawLayout() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw stage outline
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(50, 50, 700, 500);
+            ctx.font = '14px Arial';
+            ctx.fillStyle = '#666';
+            ctx.fillText('STAGE', 380, 40);
+            
+            // Draw seats
+            currentProject.seats.forEach(seat => {
+                const def = instrumentDefinitions[seat.instrument] || { color: '#999', section: 'other' };
+                
+                // Draw seat circle
+                ctx.beginPath();
+                ctx.arc(seat.x, seat.y, 18, 0, 2 * Math.PI);
+                
+                // Fill with section color
+                ctx.fillStyle = def.color;
+                ctx.fill();
+                
+                // Draw border
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // Draw instrument label
+                ctx.font = '10px Arial';
+                ctx.fillStyle = '#fff';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                // Shorten label for display
+                let shortLabel = def.label.split(' ')[0];
+                ctx.fillText(shortLabel, seat.x, seat.y - 5);
+                
+                // Draw musician name if available
+                if (seat.musician) {
+                    ctx.font = '8px Arial';
+                    ctx.fillStyle = '#fff';
+                    ctx.fillText(seat.musician.name.split(' ')[0], seat.x, seat.y + 8);
+                }
+                
+                // Draw seat ID for debugging (optional)
+                // ctx.font = '6px Arial';
+                // ctx.fillText(seat.id, seat.x, seat.y + 15);
+            });
+        }
+        
+        // Canvas event handling for drag and drop
+        function setupCanvasEvents() {
+            canvas.addEventListener('mousedown', handleMouseDown);
+            canvas.addEventListener('mousemove', handleMouseMove);
+            canvas.addEventListener('mouseup', handleMouseUp);
+            canvas.addEventListener('mouseleave', handleMouseUp);
+        }
+        
+        function handleMouseDown(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            const mouseX = (e.clientX - rect.left) * scaleX;
+            const mouseY = (e.clientY - rect.top) * scaleY;
+            
+            // Check if clicked on a seat
+            for (let seat of currentProject.seats) {
+                const dx = mouseX - seat.x;
+                const dy = mouseY - seat.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < 20) {
+                    isDragging = true;
+                    currentProject.draggedSeat = seat;
+                    currentProject.dragOffset = {
+                        x: mouseX - seat.x,
+                        y: mouseY - seat.y
+                    };
+                    selectedSeat = seat;
+                    canvas.style.cursor = 'grabbing';
+                    drawLayout();
+                    break;
+                }
+            }
+        }
+        
+        function handleMouseMove(e) {
+            if (!isDragging || !currentProject.draggedSeat) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            const mouseX = (e.clientX - rect.left) * scaleX;
+            const mouseY = (e.clientY - rect.top) * scaleY;
+            
+            // Update seat position
+            currentProject.draggedSeat.x = mouseX - currentProject.dragOffset.x;
+            currentProject.draggedSeat.y = mouseY - currentProject.dragOffset.y;
+            
+            // Keep within canvas bounds
+            currentProject.draggedSeat.x = Math.max(30, Math.min(770, currentProject.draggedSeat.x));
+            currentProject.draggedSeat.y = Math.max(30, Math.min(570, currentProject.draggedSeat.y));
+            
+            drawLayout();
+        }
+        
+        function handleMouseUp(e) {
+            if (isDragging) {
+                isDragging = false;
+                currentProject.draggedSeat = null;
+                canvas.style.cursor = 'grab';
+                drawLayout();
+                updateStatus('Seat position updated');
+            }
+        }
+        
+        // CSV Upload Handling
+        function handleCSVUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const csv = e.target.result;
+                const lines = csv.split('\n');
+                
+                currentProject.musicians = [];
+                
+                for (let i = 1; i < lines.length; i++) { // Skip header row
+                    const line = lines[i].trim();
+                    if (!line) continue;
+                    
+                    const parts = line.split(',');
+                    if (parts.length >= 2) {
+                        currentProject.musicians.push({
+                            name: parts[0].trim(),
+                            instrument: parts[1].trim().toLowerCase().replace(' ', ''),
+                            part: parts[2] ? parts[2].trim() : null,
+                            assigned: false
+                        });
+                    }
+                }
+                
+                updateStatus(`Loaded ${currentProject.musicians.length} musicians from CSV`);
+                generateLayout(); // Regenerate layout with musicians
+            };
+            
+            reader.readAsText(file);
+        }
+        
+        // Project Management
+        function saveProject() {
+            currentProject.name = document.getElementById('projectName').value;
+            currentProject.ensembleType = document.getElementById('ensembleType').value;
+            
+            // Load from localStorage
+            let savedProjects = JSON.parse(localStorage.getItem('orchestraProjects') || '[]');
+            
+            // Update or add
+            const index = savedProjects.findIndex(p => p.id === currentProject.id);
+            if (index >= 0) {
+                savedProjects[index] = currentProject;
+            } else {
+                savedProjects.push(currentProject);
+            }
+            
+            localStorage.setItem('orchestraProjects', JSON.stringify(savedProjects));
+            loadProjectsFromStorage();
+            updateProjectList();
+            updateStatus('Project saved successfully');
+        }
+        
+        function loadProject(projectId = null) {
+            if (!projectId) {
+                // Show prompt to select from list
+                return;
+            }
+            
+            let savedProjects = JSON.parse(localStorage.getItem('orchestraProjects') || '[]');
+            const project = savedProjects.find(p => p.id === projectId);
+            
+            if (project) {
+                currentProject = project;
+                document.getElementById('projectName').value = project.name;
+                document.getElementById('ensembleType').value = project.ensembleType;
+                
+                // Update instrument inputs
+                for (let [key, value] of Object.entries(project.instrumentation)) {
+                    const input = document.getElementById(`inst_${key}`);
+                    if (input) input.value = value;
+                }
+                
+                drawLayout();
+                updateStatus(`Loaded project: ${project.name}`);
+            }
+        }
+        
+        function exportProject() {
+            const dataStr = JSON.stringify(currentProject, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = `${currentProject.name.replace(/\s+/g, '_')}_${Date.now()}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+            
+            updateStatus('Project exported successfully');
+        }
+        
+        function importProject(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const project = JSON.parse(e.target.result);
+                    currentProject = project;
+                    
+                    // Update UI
+                    document.getElementById('projectName').value = project.name;
+                    document.getElementById('ensembleType').value = project.ensembleType;
+                    
+                    // Update instrument inputs
+                    for (let [key, value] of Object.entries(project.instrumentation)) {
+                        const input = document.getElementById(`inst_${key}`);
+                        if (input) input.value = value;
+                    }
+                    
+                    drawLayout();
+                    updateStatus(`Imported project: ${project.name}`);
+                } catch (error) {
+                    updateStatus('Error importing project: Invalid JSON');
+                }
+            };
+            
+            reader.readAsText(file);
+        }
+        
+        function createNewProject() {
+            currentProject = {
+                id: Date.now(),
+                name: 'New Project',
+                ensembleType: 'orchestra',
+                instrumentation: {
+                    violin1: 8, violin2: 6, viola: 4, cello: 3, bass: 2,
+                    flute: 2, oboe: 2, clarinet: 2, bassoon: 2,
+                    trumpet: 2, horn: 2, trombone: 2, tuba: 1,
+                    percussion: 2, timpani: 1
+                },
+                musicians: [],
+                seats: [],
+                draggedSeat: null,
+                dragOffset: { x: 0, y: 0 }
+            };
+            
+            document.getElementById('projectName').value = 'New Project';
+            document.getElementById('ensembleType').value = 'orchestra';
+            
+            renderInstrumentInputs();
+            generateLayout();
+            updateStatus('Created new project');
+        }
+        
+        function deleteProject(projectId, event) {
+            event.stopPropagation();
+            
+            let savedProjects = JSON.parse(localStorage.getItem('orchestraProjects') || '[]');
+            savedProjects = savedProjects.filter(p => p.id !== projectId);
+            localStorage.setItem('orchestraProjects', JSON.stringify(savedProjects));
+            
+            loadProjectsFromStorage();
+            updateProjectList();
+            updateStatus('Project deleted');
+        }
+        
+        function loadProjectsFromStorage() {
+            projects = JSON.parse(localStorage.getItem('orchestraProjects') || '[]');
+        }
+        
+        function updateProjectList() {
+            const listElement = document.getElementById('projectList');
+            listElement.innerHTML = '';
+            
+            if (projects.length === 0) {
+                listElement.innerHTML = '<div style="color: #666; text-align: center;">No saved projects</div>';
+                return;
+            }
+            
+            projects.forEach(project => {
+                const div = document.createElement('div');
+                div.className = 'project-item';
+                div.onclick = () => loadProject(project.id);
+                div.innerHTML = `
+                    <span>${project.name}</span>
+                    <button class="btn btn-danger" style="padding: 2px 8px;" onclick="deleteProject(${project.id}, event)">×</button>
+                `;
+                listElement.appendChild(div);
+            });
+        }
+        
+        // Export as PNG
+        function exportPNG() {
+            const canvas = document.getElementById('orchestraCanvas');
+            const dataURL = canvas.toDataURL('image/png');
+            
+            const link = document.createElement('a');
+            link.download = `${currentProject.name.replace(/\s+/g, '_')}_layout.png`;
+            link.href = dataURL;
+            link.click();
+            
+            updateStatus('PNG exported successfully');
+        }
+        
+        // Update status bar
+        function updateStatus(message) {
+            document.getElementById('statusBar').textContent = message;
+        }
+        
+        // Make functions globally available
+        window.createNewProject = createNewProject;
+        window.saveProject = saveProject;
+        window.loadProject = loadProject;
+        window.exportProject = exportProject;
+        window.importProject = importProject;
+        window.deleteProject = deleteProject;
+        window.exportPNG = exportPNG;
+        window.generateLayout = generateLayout;
+        window.handleCSVUpload = handleCSVUpload;
+    </script>
+</body>
+</html>
