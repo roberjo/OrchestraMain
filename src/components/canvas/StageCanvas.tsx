@@ -1,10 +1,9 @@
-import { useMemo, useRef } from 'react';
-import { Stage, Layer } from 'react-konva';
-import type Konva from 'konva';
-import { StageBackground } from './StageBackground.tsx';
-import { ConductorMarker } from './ConductorMarker.tsx';
-import { SectionGroup } from './SectionGroup.tsx';
+import { useEffect, useRef, useMemo } from 'react';
+import Konva from 'konva';
 import { useStore } from '@/store/index.ts';
+import { drawStageBackground } from './stageBackgroundRenderer.ts';
+import { drawConductorMarker } from './conductorMarkerRenderer.ts';
+import { drawSeatNodes } from './seatNodeRenderer.ts';
 import type { InstrumentFamily } from '@/types/musician.ts';
 
 interface StageCanvasProps {
@@ -13,7 +12,10 @@ interface StageCanvasProps {
 }
 
 export function StageCanvas({ width, height }: StageCanvasProps) {
-  const stageRef = useRef<Konva.Stage>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<Konva.Stage | null>(null);
+  const layerRef = useRef<Konva.Layer | null>(null);
+
   const musicians = useStore((s) => s.musicians);
   const seatPositions = useStore((s) => s.seatPositions);
   const layoutConfig = useStore((s) => s.layoutConfig);
@@ -26,7 +28,7 @@ export function StageCanvas({ width, height }: StageCanvasProps) {
   const setZoom = useStore((s) => s.setZoom);
   const setStageOffset = useStore((s) => s.setStageOffset);
 
-  // Group musicians by section for rendering
+  // Group musicians by section
   const sectionGroups = useMemo(() => {
     const groups = new Map<InstrumentFamily, typeof musicianList>();
     const musicianList = Object.values(musicians);
@@ -41,72 +43,108 @@ export function StageCanvas({ width, height }: StageCanvasProps) {
     return groups;
   }, [musicians]);
 
-  const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
-    e.evt.preventDefault();
-    const stage = stageRef.current;
-    if (!stage) return;
+  // Initialize Konva stage
+  useEffect(() => {
+    if (!containerRef.current) return;
 
-    const oldScale = zoomLevel;
-    const pointer = stage.getPointerPosition();
-    if (!pointer) return;
+    const stage = new Konva.Stage({
+      container: containerRef.current,
+      width,
+      height,
+      draggable: true,
+    });
 
-    const mousePointTo = {
-      x: (pointer.x - stageOffsetX) / oldScale,
-      y: (pointer.y - stageOffsetY) / oldScale,
+    const layer = new Konva.Layer();
+    stage.add(layer);
+
+    stageRef.current = stage;
+    layerRef.current = layer;
+
+    // Handle wheel zoom
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      if (!stageRef.current) return;
+
+      const oldScale = zoomLevel;
+      const pointer = stageRef.current.getPointerPosition();
+      if (!pointer) return;
+
+      const mousePointTo = {
+        x: (pointer.x - stageOffsetX) / oldScale,
+        y: (pointer.y - stageOffsetY) / oldScale,
+      };
+
+      const direction = e.deltaY > 0 ? -1 : 1;
+      const scaleBy = 1.1;
+      const newScale = direction > 0 ? oldScale * scaleBy : oldScale / scaleBy;
+      const clampedScale = Math.max(0.3, Math.min(3, newScale));
+
+      setZoom(clampedScale);
+      setStageOffset(
+        pointer.x - mousePointTo.x * clampedScale,
+        pointer.y - mousePointTo.y * clampedScale,
+      );
     };
 
-    const direction = e.evt.deltaY > 0 ? -1 : 1;
-    const scaleBy = 1.1;
-    const newScale = direction > 0 ? oldScale * scaleBy : oldScale / scaleBy;
-    const clampedScale = Math.max(0.3, Math.min(3, newScale));
+    // Handle click to deselect
+    const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
+      if (e.target === stageRef.current) {
+        deselectAll();
+      }
+    };
 
-    setZoom(clampedScale);
-    setStageOffset(
-      pointer.x - mousePointTo.x * clampedScale,
-      pointer.y - mousePointTo.y * clampedScale,
+    // Handle drag
+    const handleDragEnd = () => {
+      if (stageRef.current) {
+        setStageOffset(stageRef.current.x(), stageRef.current.y());
+      }
+    };
+
+    containerRef.current.addEventListener('wheel', handleWheel, { passive: false });
+    stage.on('click', handleStageClick);
+    stage.on('dragend', handleDragEnd);
+
+    return () => {
+      containerRef.current?.removeEventListener('wheel', handleWheel);
+      stage.off('click', handleStageClick);
+      stage.off('dragend', handleDragEnd);
+      stage.destroy();
+    };
+  }, []);
+
+  // Render canvas content
+  useEffect(() => {
+    const stage = stageRef.current;
+    const layer = layerRef.current;
+    if (!stage || !layer) return;
+
+    // Update stage dimensions and transform
+    stage.width(width);
+    stage.height(height);
+    stage.scaleX(zoomLevel);
+    stage.scaleY(zoomLevel);
+    stage.x(stageOffsetX);
+    stage.y(stageOffsetY);
+
+    // Clear and redraw
+    layer.destroyChildren();
+
+    // Draw background and conductor
+    drawStageBackground(layer, layoutConfig);
+    drawConductorMarker(layer, layoutConfig.conductorX, layoutConfig.conductorY);
+
+    // Draw all seat nodes
+    drawSeatNodes(
+      layer,
+      Array.from(sectionGroups.values()).flat(),
+      seatPositions,
+      new Set(selectedSeatIds),
+      layoutConfig.seatRadius,
+      selectSeat,
     );
-  };
 
-  const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    // Click on empty area = deselect all
-    if (e.target === e.target.getStage()) {
-      deselectAll();
-    }
-  };
+    layer.batchDraw();
+  }, [width, height, zoomLevel, stageOffsetX, stageOffsetY, sectionGroups, seatPositions, selectedSeatIds, layoutConfig, selectSeat]);
 
-  return (
-    <Stage
-      ref={stageRef}
-      width={width}
-      height={height}
-      scaleX={zoomLevel}
-      scaleY={zoomLevel}
-      x={stageOffsetX}
-      y={stageOffsetY}
-      draggable
-      onWheel={handleWheel}
-      onClick={handleStageClick}
-      onDragEnd={(e) => {
-        if (e.target === stageRef.current) {
-          setStageOffset(e.target.x(), e.target.y());
-        }
-      }}
-    >
-      <Layer>
-        <StageBackground config={layoutConfig} />
-        <ConductorMarker x={layoutConfig.conductorX} y={layoutConfig.conductorY} />
-
-        {Array.from(sectionGroups.entries()).map(([family, musicianList]) => (
-          <SectionGroup
-            key={family}
-            musicians={musicianList}
-            positions={seatPositions}
-            selectedSeatIds={selectedSeatIds}
-            seatRadius={layoutConfig.seatRadius}
-            onSelect={selectSeat}
-          />
-        ))}
-      </Layer>
-    </Stage>
-  );
+  return <div ref={containerRef} className="w-full h-full" />;
 }
