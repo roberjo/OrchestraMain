@@ -50,7 +50,7 @@ export function ImportPreview({ result, onConfirm, onBack }: ImportPreviewProps)
 
       {/* Preview table */}
       {result.musicians.length > 0 && (
-        <div className="max-h-64 overflow-y-auto rounded border border-gray-200">
+        <div className="max-h-64 overflow-y-auto rounded border border-[var(--color-border-light)]">
           <table className="w-full text-sm">
             <thead className="sticky top-0 bg-gray-50">
               <tr>

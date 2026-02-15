@@ -76,11 +76,11 @@ export function ExportPanel({ isOpen, onClose }: ExportPanelProps) {
         </div>
 
         {/* Summary */}
-        <div className="rounded-lg bg-gray-50 p-4 dark:bg-gray-800">
-          <p className="text-sm text-gray-600 dark:text-gray-300">
+        <div className="rounded-lg bg-[var(--color-bg-tertiary)] p-4">
+          <p className="text-sm text-[var(--color-text-secondary)]">
             <strong>{projectName}</strong> &mdash; {musicianCount} musicians
           </p>
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
             {selectedFormat === 'png' && 'Exports the canvas as a high-resolution PNG image at 2x scale.'}
             {selectedFormat === 'pdf' && 'Generates a PDF document with the stage layout, musician names, and section legend.'}
             {selectedFormat === 'print' && 'Opens your browser print dialog with a clean stage plot layout.'}
@@ -119,13 +119,13 @@ function FormatOption({
       onClick={onSelect}
       className={`rounded-lg border-2 p-4 text-center transition-all ${
         isSelected
-          ? 'border-blue-500 bg-blue-50 shadow-sm dark:bg-blue-900/30'
-          : 'border-gray-200 hover:border-gray-300 dark:border-gray-700'
+          ? 'border-[var(--color-primary-500)] bg-[var(--color-primary-50)] shadow-sm'
+          : 'border-[var(--color-border-light)] hover:border-[var(--color-border-medium)]'
       }`}
     >
       <div className="mb-1 text-2xl">{icon}</div>
-      <div className="text-sm font-semibold text-gray-700 dark:text-gray-200">{label}</div>
-      <div className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{description}</div>
+      <div className="text-sm font-semibold text-[var(--color-text-primary)]">{label}</div>
+      <div className="mt-0.5 text-xs text-[var(--color-text-tertiary)]">{description}</div>
     </button>
   );
 }

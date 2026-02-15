@@ -31,12 +31,12 @@ export function Modal({ isOpen, onClose, title, children, width = 'max-w-2xl' }:
         if (e.target === overlayRef.current) onClose();
       }}
     >
-      <div className={`${width} w-full rounded-lg bg-white shadow-xl`}>
-        <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+      <div className={`${width} w-full rounded-lg bg-[var(--color-bg-primary)] shadow-xl`}>
+        <div className="flex items-center justify-between border-b border-[var(--color-border-light)] px-6 py-4">
+          <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">{title}</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]"
             aria-label="Close"
           >
             ✕

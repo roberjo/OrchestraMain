@@ -73,25 +73,25 @@ export function ImportWizard({ isOpen, onClose }: ImportWizardProps) {
       {/* Step 1: Choose source */}
       {step === 'source' && mode === 'choose' && (
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-[var(--color-text-secondary)]">
             How would you like to add musicians?
           </p>
           <div className="grid grid-cols-2 gap-4">
             <button
               onClick={() => setMode('file')}
-              className="rounded-lg border-2 border-gray-200 p-6 text-center hover:border-blue-500 hover:bg-blue-50"
+              className="rounded-lg border-2 border-[var(--color-border-light)] p-6 text-center hover:border-[var(--color-primary-500)] hover:bg-[var(--color-primary-50)]"
             >
               <div className="mb-2 text-2xl">📄</div>
-              <div className="text-sm font-semibold text-gray-700">Upload File</div>
-              <div className="mt-1 text-xs text-gray-500">CSV or Excel spreadsheet</div>
+              <div className="text-sm font-semibold text-[var(--color-text-primary)]">Upload File</div>
+              <div className="mt-1 text-xs text-[var(--color-text-tertiary)]">CSV or Excel spreadsheet</div>
             </button>
             <button
               onClick={() => setMode('manual')}
-              className="rounded-lg border-2 border-gray-200 p-6 text-center hover:border-blue-500 hover:bg-blue-50"
+              className="rounded-lg border-2 border-[var(--color-border-light)] p-6 text-center hover:border-[var(--color-primary-500)] hover:bg-[var(--color-primary-50)]"
             >
               <div className="mb-2 text-2xl">✏️</div>
-              <div className="text-sm font-semibold text-gray-700">Manual Entry</div>
-              <div className="mt-1 text-xs text-gray-500">Add musicians one by one</div>
+              <div className="text-sm font-semibold text-[var(--color-text-primary)]">Manual Entry</div>
+              <div className="mt-1 text-xs text-[var(--color-text-tertiary)]">Add musicians one by one</div>
             </button>
           </div>
         </div>
@@ -102,7 +102,7 @@ export function ImportWizard({ isOpen, onClose }: ImportWizardProps) {
         <div className="space-y-4">
           <FileUploader onFileSelected={handleFileSelected} isLoading={isLoading} />
           {error && (
-            <div className="rounded bg-red-50 p-3 text-sm text-red-600">{error}</div>
+            <div className="rounded bg-[var(--color-danger-50)] p-3 text-sm text-[var(--color-danger-600)]">{error}</div>
           )}
           <Button onClick={() => setMode('choose')}>Back</Button>
         </div>
@@ -147,9 +147,9 @@ export function ImportWizard({ isOpen, onClose }: ImportWizardProps) {
           />
 
           {/* Show sample rows */}
-          <div className="max-h-32 overflow-auto rounded border border-gray-200">
+          <div className="max-h-32 overflow-auto rounded border border-[var(--color-border-light)]">
             <table className="w-full text-xs">
-              <thead className="bg-gray-50">
+              <thead className="bg-[var(--color-bg-tertiary)]">
                 <tr>
                   {parsedData.headers.map((h) => (
                     <th key={h} className="px-2 py-1 text-left font-medium text-gray-500">
@@ -160,7 +160,7 @@ export function ImportWizard({ isOpen, onClose }: ImportWizardProps) {
               </thead>
               <tbody>
                 {parsedData.rows.slice(0, 3).map((row, i) => (
-                  <tr key={i} className="border-t border-gray-100">
+                  <tr key={i} className="border-t border-[var(--color-border-light)]">
                     {row.map((cell, j) => (
                       <td key={j} className="px-2 py-0.5 text-gray-600">
                         {cell}

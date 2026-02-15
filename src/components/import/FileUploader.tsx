@@ -30,7 +30,7 @@ export function FileUploader({ onFileSelected, isLoading }: FileUploaderProps) {
   return (
     <div
       className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 transition-colors ${
-        isDragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-gray-50'
+        isDragOver ? 'border-[var(--color-primary-500)] bg-[var(--color-primary-50)]' : 'border-[var(--color-border-light)] bg-[var(--color-bg-tertiary)]'
       }`}
       onDragOver={(e) => {
         e.preventDefault();
@@ -40,16 +40,16 @@ export function FileUploader({ onFileSelected, isLoading }: FileUploaderProps) {
       onDrop={handleDrop}
     >
       {isLoading ? (
-        <p className="text-sm text-gray-500">Parsing file...</p>
+        <p className="text-sm text-[var(--color-text-tertiary)]">Parsing file...</p>
       ) : (
         <>
-          <p className="mb-2 text-sm text-gray-600">
+          <p className="mb-2 text-sm text-[var(--color-text-secondary)]">
             Drag and drop a <strong>.csv</strong> or <strong>.xlsx</strong> file here
           </p>
-          <p className="mb-4 text-xs text-gray-400">or</p>
+          <p className="mb-4 text-xs text-[var(--color-text-tertiary)]">or</p>
           <button
             onClick={() => inputRef.current?.click()}
-            className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            className="rounded bg-[var(--color-primary-600)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-primary-700)]"
           >
             Browse Files
           </button>
