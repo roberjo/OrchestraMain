@@ -15,7 +15,6 @@ export function AppLayout() {
   const layoutConfig = useStore((s) => s.layoutConfig);
   const setStageOffset = useStore((s) => s.setStageOffset);
   const setZoom = useStore((s) => s.setZoom);
-  const zoomLevel = useStore((s) => s.zoomLevel);
   const hasCentered = useRef(false);
 
   const canvasContainerRef = useRef<HTMLDivElement>(null);

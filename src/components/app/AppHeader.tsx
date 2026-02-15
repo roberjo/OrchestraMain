@@ -1,7 +1,6 @@
 import { useRef } from 'react';
 import { useStore } from '@/store/index.ts';
 import { LAYOUT_PRESETS } from '@/engine/layoutPresets.ts';
-import { EXAMPLE_ORCHESTRAS } from '@/utils/exampleData.ts';
 import { ThemeToggle } from '@/components/shared/ThemeToggle.tsx';
 import { serializeProject, exportProjectAsJSON, downloadJSON, getDownloadFilename, deserializeProject } from '@/utils/projectSerializer.ts';
 import type { LayoutType } from '@/types/layout.ts';
@@ -15,7 +14,6 @@ export function AppHeader() {
   const setLayoutType = useStore((s) => s.setLayoutType);
   const openModal = useStore((s) => s.openModal);
   const musicianCount = useStore((s) => Object.keys(s.musicians).length);
-  const loadExample = useStore((s) => s.loadExample);
   const importMusicians = useStore((s) => s.importMusicians);
   const setSeatPositions = useStore((s) => s.setSeatPositions);
   const updateLayoutConfig = useStore((s) => s.updateLayoutConfig);
@@ -24,11 +22,6 @@ export function AppHeader() {
   const layoutConfig = useStore((s) => s.layoutConfig);
   const wedges = useStore((s) => s.wedges);
   const setWedges = useStore((s) => s.setWedges);
-
-  const handleLoadExample = (key: 'american' | 'band' | 'chamber') => {
-    loadExample(EXAMPLE_ORCHESTRAS[key]);
-    setProjectName(EXAMPLE_ORCHESTRAS[key].name);
-  };
 
   const handleSaveProject = () => {
     try {
