@@ -48,10 +48,11 @@ export function StageCanvas({ width, height }: StageCanvasProps) {
 
   // Initialize Konva stage
   useEffect(() => {
-    if (!containerRef.current) return;
+    const container = containerRef.current;
+    if (!container) return;
 
     const stage = new Konva.Stage({
-      container: containerRef.current,
+      container: container,
       width,
       height,
       draggable: true,
@@ -103,16 +104,17 @@ export function StageCanvas({ width, height }: StageCanvasProps) {
       }
     };
 
-    containerRef.current.addEventListener('wheel', handleWheel, { passive: false });
+    container.addEventListener('wheel', handleWheel, { passive: false });
     stage.on('click', handleStageClick);
     stage.on('dragend', handleDragEnd);
 
     return () => {
-      containerRef.current?.removeEventListener('wheel', handleWheel);
+      container.removeEventListener('wheel', handleWheel);
       stage.off('click', handleStageClick);
       stage.off('dragend', handleDragEnd);
       stage.destroy();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Render canvas content
@@ -150,7 +152,7 @@ export function StageCanvas({ width, height }: StageCanvasProps) {
     );
 
     layer.batchDraw();
-  }, [width, height, zoomLevel, stageOffsetX, stageOffsetY, sectionGroups, seatPositions, selectedSeatIds, layoutConfig, selectSeat]);
+  }, [width, height, zoomLevel, stageOffsetX, stageOffsetY, sectionGroups, seatPositions, selectedSeatIds, layoutConfig, selectSeat, handleDragStart, handleDragMove, handleDragEnd]);
 
   return <div ref={containerRef} className="w-full h-full" />;
 }

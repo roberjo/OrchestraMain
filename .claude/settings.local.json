@@ -13,7 +13,9 @@
       "Bash(npm install)",
       "Bash(npx tsc:*)",
       "Bash(npx vite:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "mcp__filesystem__list_directory_with_sizes",
+      "Bash(npx vitest run)"
     ]
   }
 }

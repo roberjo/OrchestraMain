@@ -1,6 +1,7 @@
 import { AppHeader } from './AppHeader.tsx';
 import { AppLayout } from './AppLayout.tsx';
 import { ImportWizard } from '@/components/import/ImportWizard.tsx';
+import { ExportPanel } from '@/components/export/ExportPanel.tsx';
 import { ThemeProvider } from '@/components/shared/ThemeProvider.tsx';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts.ts';
 import { useAutoHistory } from '@/hooks/useAutoHistory.ts';
@@ -26,6 +27,7 @@ export function App() {
         <AppHeader />
         <AppLayout />
         <ImportWizard isOpen={activeModal === 'import'} onClose={closeModal} />
+        <ExportPanel isOpen={activeModal === 'export'} onClose={closeModal} />
       </div>
     </ThemeProvider>
   );

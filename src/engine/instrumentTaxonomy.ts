@@ -142,6 +142,9 @@ export const INSTRUMENT_ALIASES: Record<string, string> = {
 export function resolveInstrument(input: string): string | null {
   const normalized = input.trim().toLowerCase();
 
+  // Empty input is not a valid instrument
+  if (normalized.length === 0) return null;
+
   // Direct match on instrument ID
   if (INSTRUMENTS[normalized]) return normalized;
 

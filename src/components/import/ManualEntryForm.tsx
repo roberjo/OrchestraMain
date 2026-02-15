@@ -35,7 +35,7 @@ export function ManualEntryForm({ onAddMusician, musicians }: ManualEntryFormPro
     if (e.key === 'Enter') handleAdd();
   };
 
-  let currentFamily = '';
+
 
   return (
     <div className="space-y-4">
@@ -54,9 +54,9 @@ export function ManualEntryForm({ onAddMusician, musicians }: ManualEntryFormPro
           onChange={(e) => setInstrumentId(e.target.value)}
           className="w-44 rounded border border-gray-300 bg-white px-2 py-1.5 text-sm"
         >
-          {instrumentOptions.map((opt) => {
-            const showGroup = opt.family !== currentFamily;
-            currentFamily = opt.family;
+          {instrumentOptions.map((opt, index) => {
+            const prevFamily = index > 0 ? instrumentOptions[index - 1].family : '';
+            const showGroup = opt.family !== prevFamily;
             return (
               <option key={opt.id} value={opt.id}>
                 {showGroup ? `── ${opt.family.toUpperCase()} ── ` : ''}

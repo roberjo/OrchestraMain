@@ -23,7 +23,8 @@ export const createRosterSlice: StateCreator<RosterSlice, [], [], RosterSlice> =
 
   removeMusician: (id) =>
     set((state) => {
-      const { [id]: _, ...rest } = state.musicians;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { [id]: _removed, ...rest } = state.musicians;
       return { musicians: rest };
     }),
 

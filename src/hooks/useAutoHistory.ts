@@ -28,5 +28,5 @@ export function useAutoHistory(debounceMs = 300) {
     }, debounceMs);
 
     return () => clearTimeout(timeoutId);
-  }, [seatPositions, pushHistory, undoStack]);
+  }, [seatPositions, pushHistory, undoStack, debounceMs]);
 }
