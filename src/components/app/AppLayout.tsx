@@ -12,6 +12,12 @@ export function AppLayout() {
   const setProjectName = useStore((s) => s.setProjectName);
   const loadExample = useStore((s) => s.loadExample);
 
+  const layoutConfig = useStore((s) => s.layoutConfig);
+  const setStageOffset = useStore((s) => s.setStageOffset);
+  const setZoom = useStore((s) => s.setZoom);
+  const zoomLevel = useStore((s) => s.zoomLevel);
+  const hasCentered = useRef(false);
+
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [containerDimensions, setContainerDimensions] = useState({ width: 800, height: 600 });
 
@@ -24,10 +30,9 @@ export function AppLayout() {
     if (!container) return;
 
     const updateDimensions = () => {
-      setContainerDimensions({
-        width: container.clientWidth,
-        height: container.clientHeight,
-      });
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+      setContainerDimensions({ width, height });
     };
 
     updateDimensions();
@@ -37,9 +42,34 @@ export function AppLayout() {
     return () => resizeObserver.disconnect();
   }, []);
 
+  // Auto zoom-to-fit when musicians are loaded or layout changes
+  useEffect(() => {
+    const container = canvasContainerRef.current;
+    if (!container || musicianCount === 0) return;
+
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+    if (width <= 0 || height <= 0) return;
+
+    // Calculate zoom to fit the entire stage within the viewport with padding
+    const padding = 60;
+    const scaleX = (width - padding * 2) / layoutConfig.stageWidth;
+    const scaleY = (height - padding * 2) / layoutConfig.stageHeight;
+    const fitScale = Math.min(scaleX, scaleY, 1.0); // Don't zoom in beyond 1:1
+
+    // Center the stage in the viewport
+    const offsetX = (width - layoutConfig.stageWidth * fitScale) / 2;
+    const offsetY = (height - layoutConfig.stageHeight * fitScale) / 2;
+
+    setZoom(fitScale);
+    setStageOffset(offsetX, offsetY);
+    hasCentered.current = true;
+  }, [musicianCount, layoutConfig.stageWidth, layoutConfig.stageHeight, setZoom, setStageOffset]);
+
   const handleLoadExample = (key: 'american' | 'band' | 'chamber') => {
     loadExample(EXAMPLE_ORCHESTRAS[key]);
     setProjectName(EXAMPLE_ORCHESTRAS[key].name);
+    hasCentered.current = false;
   };
 
   return (
@@ -48,7 +78,7 @@ export function AppLayout() {
       <Sidebar />
 
       {/* Center Canvas */}
-      <main className="flex flex-1 items-center justify-center bg-gradient-to-br from-[var(--color-bg-primary)] to-[var(--color-bg-secondary)]" ref={canvasContainerRef}>
+      <main className="flex flex-1 min-w-0 items-center justify-center bg-gradient-to-br from-[var(--color-bg-primary)] to-[var(--color-bg-secondary)]" ref={canvasContainerRef}>
         {musicianCount === 0 ? (
           <div className="w-full max-w-lg rounded-2xl bg-[var(--color-bg-primary)] p-8 shadow-xl border border-[var(--color-border-light)]">
             <div className="mb-6 text-center">
@@ -83,22 +113,22 @@ export function AppLayout() {
                   onClick={() => handleLoadExample('american')}
                   className="w-full rounded-lg border-2 border-[var(--color-border-light)] bg-[var(--color-bg-primary)] px-4 py-3 text-sm font-semibold text-[var(--color-text-primary)] hover:border-[var(--color-primary-500)] hover:bg-[var(--color-primary-50)] transition-all"
                 >
-                  <div className="font-bold">American Symphony</div>
-                  <div className="text-xs text-[var(--color-text-tertiary)] mt-1">60 orchestra members</div>
+                  <div className="font-bold">🎻 American Symphony</div>
+                  <div className="text-xs text-[var(--color-text-tertiary)] mt-1">46 orchestra members</div>
                 </button>
                 <button
                   onClick={() => handleLoadExample('chamber')}
                   className="w-full rounded-lg border-2 border-[var(--color-border-light)] bg-[var(--color-bg-primary)] px-4 py-3 text-sm font-semibold text-[var(--color-text-primary)] hover:border-[var(--color-primary-500)] hover:bg-[var(--color-primary-50)] transition-all"
                 >
-                  <div className="font-bold">Chamber Orchestra</div>
+                  <div className="font-bold">🎺 Chamber Orchestra</div>
                   <div className="text-xs text-[var(--color-text-tertiary)] mt-1">28 intimate ensemble</div>
                 </button>
                 <button
                   onClick={() => handleLoadExample('band')}
                   className="w-full rounded-lg border-2 border-[var(--color-border-light)] bg-[var(--color-bg-primary)] px-4 py-3 text-sm font-semibold text-[var(--color-text-primary)] hover:border-[var(--color-primary-500)] hover:bg-[var(--color-primary-50)] transition-all"
                 >
-                  <div className="font-bold">Concert Band</div>
-                  <div className="text-xs text-[var(--color-text-tertiary)] mt-1">50 wind band members</div>
+                  <div className="font-bold">🎷 Concert Band</div>
+                  <div className="text-xs text-[var(--color-text-tertiary)] mt-1">34 wind band members</div>
                 </button>
               </div>
             </div>

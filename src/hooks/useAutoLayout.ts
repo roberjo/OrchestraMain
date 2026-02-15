@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useStore } from '@/store/index.ts';
 import { computeLayout } from '@/engine/layoutEngine.ts';
+import { computeAdaptiveConfig } from '@/engine/spacingCalculator.ts';
 
 /**
  * Hook that automatically recomputes layout when roster or layout config changes.
@@ -10,6 +11,7 @@ export function useAutoLayout() {
   const layoutConfig = useStore((s) => s.layoutConfig);
   const layoutType = useStore((s) => s.layoutType);
   const setSeatPositions = useStore((s) => s.setSeatPositions);
+  const updateLayoutConfig = useStore((s) => s.updateLayoutConfig);
   const seatPositions = useStore((s) => s.seatPositions);
 
   const prevMusicianCount = useRef(0);
@@ -37,7 +39,14 @@ export function useAutoLayout() {
 
     if (needsRecompute) {
       const config = { ...layoutConfig, layoutType };
-      const newPositions = computeLayout(musicianList, config);
+
+      // Calculate adaptive config based on count
+      const adaptiveConfig = computeAdaptiveConfig(musicianList.length, config);
+
+      // Update store with adaptive values so UI matches
+      updateLayoutConfig(adaptiveConfig);
+
+      const newPositions = computeLayout(musicianList, adaptiveConfig);
 
       // Preserve manually placed seats
       for (const [id, pos] of Object.entries(seatPositions)) {

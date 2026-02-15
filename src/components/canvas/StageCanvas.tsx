@@ -5,6 +5,7 @@ import { useDragSeat } from '@/hooks/useDragSeat.ts';
 import { drawStageBackground } from './stageBackgroundRenderer.ts';
 import { drawConductorMarker } from './conductorMarkerRenderer.ts';
 import { drawSeatNodes } from './seatNodeRenderer.ts';
+import { drawWedgeBoundaries } from './wedgeRenderer.ts';
 import type { InstrumentFamily } from '@/types/musician.ts';
 
 interface StageCanvasProps {
@@ -28,8 +29,12 @@ export function StageCanvas({ width, height }: StageCanvasProps) {
   const stageOffsetY = useStore((s) => s.stageOffsetY);
   const setZoom = useStore((s) => s.setZoom);
   const setStageOffset = useStore((s) => s.setStageOffset);
+  const theme = useStore((s) => s.theme);
+  const wedges = useStore((s) => s.wedges);
+  const selectedWedgeId = useStore((s) => s.selectedWedgeId);
+  const selectWedge = useStore((s) => s.selectWedge);
 
-  const { handleDragStart, handleDragMove, handleDragEnd } = useDragSeat();
+  const { handleDragEnd } = useDragSeat();
 
   // Group musicians by section
   const sectionGroups = useMemo(() => {
@@ -45,6 +50,8 @@ export function StageCanvas({ width, height }: StageCanvasProps) {
 
     return groups;
   }, [musicians]);
+
+  const wedgeList = useMemo(() => Object.values(wedges), [wedges]);
 
   // Initialize Konva stage
   useEffect(() => {
@@ -94,11 +101,12 @@ export function StageCanvas({ width, height }: StageCanvasProps) {
     const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
       if (e.target === stageRef.current) {
         deselectAll();
+        selectWedge(null);
       }
     };
 
     // Handle drag
-    const handleDragEnd = () => {
+    const handleStageDragEnd = () => {
       if (stageRef.current) {
         setStageOffset(stageRef.current.x(), stageRef.current.y());
       }
@@ -106,12 +114,12 @@ export function StageCanvas({ width, height }: StageCanvasProps) {
 
     container.addEventListener('wheel', handleWheel, { passive: false });
     stage.on('click', handleStageClick);
-    stage.on('dragend', handleDragEnd);
+    stage.on('dragend', handleStageDragEnd);
 
     return () => {
       container.removeEventListener('wheel', handleWheel);
       stage.off('click', handleStageClick);
-      stage.off('dragend', handleDragEnd);
+      stage.off('dragend', handleStageDragEnd);
       stage.destroy();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -134,9 +142,25 @@ export function StageCanvas({ width, height }: StageCanvasProps) {
     // Clear and redraw
     layer.destroyChildren();
 
+    // Get current theme colors from computed style
+    const stageColor = getComputedStyle(document.documentElement).getPropertyValue('--color-bg-tertiary').trim() || '#f3f4f6';
+    const arcColor = getComputedStyle(document.documentElement).getPropertyValue('--color-border-medium').trim() || '#d1d5db';
+
     // Draw background and conductor
-    drawStageBackground(layer, layoutConfig);
+    drawStageBackground(layer, layoutConfig, stageColor, arcColor);
     drawConductorMarker(layer, layoutConfig.conductorX, layoutConfig.conductorY);
+
+    // Draw wedge boundaries (behind seats)
+    if (wedgeList.length > 0) {
+      drawWedgeBoundaries(
+        layer,
+        wedgeList,
+        seatPositions,
+        layoutConfig.seatRadius,
+        selectedWedgeId,
+        selectWedge,
+      );
+    }
 
     // Draw all seat nodes
     drawSeatNodes(
@@ -146,13 +170,11 @@ export function StageCanvas({ width, height }: StageCanvasProps) {
       new Set(selectedSeatIds),
       layoutConfig.seatRadius,
       selectSeat,
-      handleDragStart,
-      handleDragMove,
-      handleDragEnd,
+      handleDragEnd
     );
 
     layer.batchDraw();
-  }, [width, height, zoomLevel, stageOffsetX, stageOffsetY, sectionGroups, seatPositions, selectedSeatIds, layoutConfig, selectSeat, handleDragStart, handleDragMove, handleDragEnd]);
+  }, [width, height, zoomLevel, stageOffsetX, stageOffsetY, sectionGroups, seatPositions, selectedSeatIds, layoutConfig, selectSeat, handleDragEnd, theme, wedgeList, selectedWedgeId, selectWedge]);
 
   return <div ref={containerRef} className="w-full h-full" />;
 }

@@ -13,6 +13,8 @@ describe('Zustand Store', () => {
       selectedSeatIds: [],
       undoStack: [],
       redoStack: [],
+      wedges: {},
+      selectedWedgeId: null,
     });
   });
 
@@ -128,6 +130,71 @@ describe('Zustand Store', () => {
       const state = useStore.getState();
       expect(state.stageOffsetX).toBe(100);
       expect(state.stageOffsetY).toBe(200);
+    });
+  });
+
+  describe('Wedge Slice', () => {
+    it('should add a wedge', () => {
+      const id = useStore.getState().addWedge('Strings', ['m1', 'm2'], '#4A90D9');
+      const state = useStore.getState();
+
+      expect(state.wedges[id]).toBeDefined();
+      expect(state.wedges[id].name).toBe('Strings');
+      expect(state.wedges[id].seatIds).toEqual(['m1', 'm2']);
+      expect(state.wedges[id].locked).toBe(true);
+    });
+
+    it('should remove a wedge', () => {
+      const id = useStore.getState().addWedge('Strings', ['m1'], '#4A90D9');
+      useStore.getState().removeWedge(id);
+
+      expect(useStore.getState().wedges[id]).toBeUndefined();
+    });
+
+    it('should update a wedge', () => {
+      const id = useStore.getState().addWedge('Strings', ['m1'], '#4A90D9');
+      useStore.getState().updateWedge(id, { name: 'Renamed', locked: false });
+
+      const wedge = useStore.getState().wedges[id];
+      expect(wedge.name).toBe('Renamed');
+      expect(wedge.locked).toBe(false);
+    });
+
+    it('should select and deselect a wedge', () => {
+      const id = useStore.getState().addWedge('Strings', ['m1'], '#4A90D9');
+      useStore.getState().selectWedge(id);
+      expect(useStore.getState().selectedWedgeId).toBe(id);
+
+      useStore.getState().selectWedge(null);
+      expect(useStore.getState().selectedWedgeId).toBeNull();
+    });
+
+    it('should find wedge for a seat', () => {
+      useStore.getState().addWedge('Strings', ['m1', 'm2', 'm3'], '#4A90D9');
+
+      const wedge = useStore.getState().getWedgeForSeat('m2');
+      expect(wedge).not.toBeNull();
+      expect(wedge!.name).toBe('Strings');
+
+      const noWedge = useStore.getState().getWedgeForSeat('m99');
+      expect(noWedge).toBeNull();
+    });
+
+    it('should clear all wedges', () => {
+      useStore.getState().addWedge('Strings', ['m1'], '#4A90D9');
+      useStore.getState().addWedge('Brass', ['m2'], '#E8A838');
+      useStore.getState().clearWedges();
+
+      expect(Object.keys(useStore.getState().wedges)).toHaveLength(0);
+      expect(useStore.getState().selectedWedgeId).toBeNull();
+    });
+
+    it('should deselect wedge when removing selected wedge', () => {
+      const id = useStore.getState().addWedge('Strings', ['m1'], '#4A90D9');
+      useStore.getState().selectWedge(id);
+      useStore.getState().removeWedge(id);
+
+      expect(useStore.getState().selectedWedgeId).toBeNull();
     });
   });
 

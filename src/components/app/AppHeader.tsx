@@ -22,6 +22,8 @@ export function AppHeader() {
   const musicians = useStore((s) => s.musicians);
   const seatPositions = useStore((s) => s.seatPositions);
   const layoutConfig = useStore((s) => s.layoutConfig);
+  const wedges = useStore((s) => s.wedges);
+  const setWedges = useStore((s) => s.setWedges);
 
   const handleLoadExample = (key: 'american' | 'band' | 'chamber') => {
     loadExample(EXAMPLE_ORCHESTRAS[key]);
@@ -30,7 +32,7 @@ export function AppHeader() {
 
   const handleSaveProject = () => {
     try {
-      const snapshot = serializeProject(projectName, layoutType, musicians, seatPositions, layoutConfig);
+      const snapshot = serializeProject(projectName, layoutType, musicians, seatPositions, layoutConfig, wedges);
       const json = exportProjectAsJSON(snapshot);
       const filename = getDownloadFilename(projectName);
       downloadJSON(filename, json);
@@ -49,45 +51,50 @@ export function AppHeader() {
         const content = e.target?.result as string;
         const snapshot = deserializeProject(content);
 
-        // Restore project state
         setProjectName(snapshot.name);
         setLayoutType(snapshot.layoutType as LayoutType);
         importMusicians(snapshot.musicians);
         setSeatPositions(snapshot.seatPositions);
         updateLayoutConfig(snapshot.layoutConfig);
+        if (snapshot.wedges) {
+          setWedges(snapshot.wedges);
+        }
       } catch (error) {
         alert(`Failed to load project: ${error instanceof Error ? error.message : String(error)}`);
       }
     };
     reader.readAsText(file);
 
-    // Reset file input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
   return (
-    <header className="no-print flex h-16 items-center gap-4 border-b border-[var(--color-border-light)] bg-[var(--color-bg-secondary)] px-6 shadow-md transition-all duration-300">
-      <div className="flex items-center gap-3">
-        <span className="text-2xl">🎵</span>
-        <h1 className="text-lg font-bold text-[var(--color-text-primary)]">Orchestra Layout Builder</h1>
+    <header className="no-print flex h-14 items-center gap-3 border-b border-[var(--color-border-light)] bg-[var(--color-bg-secondary)] px-4 shadow-sm transition-all duration-300">
+      {/* Logo + Title */}
+      <div className="flex items-center gap-2 shrink-0">
+        <span className="text-xl">🎵</span>
+        <h1 className="text-sm font-bold text-[var(--color-text-primary)] whitespace-nowrap hidden lg:block">Orchestra Layout Builder</h1>
+        <h1 className="text-sm font-bold text-[var(--color-text-primary)] whitespace-nowrap lg:hidden">OLB</h1>
       </div>
 
-      <div className="h-8 w-px bg-[var(--color-border-medium)]" />
+      <div className="h-6 w-px bg-[var(--color-border-medium)] shrink-0" />
 
+      {/* Project name */}
       <input
         type="text"
         value={projectName}
         onChange={(e) => setProjectName(e.target.value)}
-        className="rounded-lg border border-[var(--color-border-light)] bg-[var(--color-bg-primary)] px-3 py-2 text-sm font-medium text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] hover:border-[var(--color-border-medium)] focus:border-[var(--color-primary-500)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)]/20"
+        className="min-w-0 w-36 rounded border border-[var(--color-border-light)] bg-[var(--color-bg-primary)] px-2 py-1.5 text-sm font-medium text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] hover:border-[var(--color-border-medium)] focus:border-[var(--color-primary-500)] focus:outline-none"
         aria-label="Project name"
       />
 
+      {/* Layout selector */}
       <select
         value={layoutType}
         onChange={(e) => setLayoutType(e.target.value as LayoutType)}
-        className="rounded-lg border border-[var(--color-border-light)] bg-[var(--color-bg-primary)] px-3 py-2 text-sm text-[var(--color-text-primary)] hover:border-[var(--color-border-medium)] focus:border-[var(--color-primary-500)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)]/20"
+        className="rounded border border-[var(--color-border-light)] bg-[var(--color-bg-primary)] px-2 py-1.5 text-sm text-[var(--color-text-primary)] hover:border-[var(--color-border-medium)] focus:border-[var(--color-primary-500)] focus:outline-none shrink-0"
         aria-label="Layout type"
       >
         {Object.values(LAYOUT_PRESETS).map((preset) => (
@@ -97,65 +104,40 @@ export function AppHeader() {
         ))}
       </select>
 
+      {/* Spacer */}
       <div className="flex-1" />
 
-      <span className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary-100)] px-3 py-1.5 text-sm font-semibold text-[var(--color-primary-700)]">
-        <span className="text-lg">🎼</span>
+      {/* Musician count badge */}
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-primary-100)] px-2.5 py-1 text-xs font-semibold text-[var(--color-primary-700)] shrink-0">
+        <span>🎼</span>
         {musicianCount}
       </span>
 
-      <div className="flex items-center gap-2">
-        {musicianCount === 0 && (
-          <div className="relative group">
-            <button className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-br from-[var(--color-success-600)] to-[var(--color-success-700)] px-3 py-2 text-sm font-semibold text-white hover:shadow-lg transition-all hover:translate-y-[-1px] active:translate-y-[0]">
-              Examples
-              <span className="text-xs">▼</span>
-            </button>
-            <div className="absolute right-0 mt-0 w-56 bg-[var(--color-bg-primary)] border border-[var(--color-border-light)] rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
-              <button
-                onClick={() => handleLoadExample('american')}
-                className="block w-full text-left px-4 py-3 text-sm text-[var(--color-text-primary)] hover:bg-[var(--color-primary-100)] border-b border-[var(--color-border-light)] transition-colors"
-              >
-                <div className="font-semibold">🎻 American Symphony</div>
-                <div className="text-xs text-[var(--color-text-tertiary)]">60 orchestra members</div>
-              </button>
-              <button
-                onClick={() => handleLoadExample('chamber')}
-                className="block w-full text-left px-4 py-3 text-sm text-[var(--color-text-primary)] hover:bg-[var(--color-primary-100)] border-b border-[var(--color-border-light)] transition-colors"
-              >
-                <div className="font-semibold">🎺 Chamber Orchestra</div>
-                <div className="text-xs text-[var(--color-text-tertiary)]">28 intimate ensemble</div>
-              </button>
-              <button
-                onClick={() => handleLoadExample('band')}
-                className="block w-full text-left px-4 py-3 text-sm text-[var(--color-text-primary)] hover:bg-[var(--color-primary-100)] transition-colors"
-              >
-                <div className="font-semibold">🎷 Concert Band</div>
-                <div className="text-xs text-[var(--color-text-tertiary)]">50 wind band members</div>
-              </button>
-            </div>
-          </div>
-        )}
+      {/* Action buttons */}
+      <div className="flex items-center gap-1.5 shrink-0">
         <button
           onClick={() => openModal('import')}
-          className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-br from-[var(--color-primary-500)] to-[var(--color-primary-600)] px-4 py-2 text-sm font-semibold text-white hover:shadow-lg transition-all hover:translate-y-[-1px] active:translate-y-[0]"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-br from-[var(--color-primary-500)] to-[var(--color-primary-600)] px-3 py-1.5 text-xs font-semibold text-white hover:shadow-lg transition-all"
+          title="Import Musicians"
         >
           <span>📤</span>
-          Import
+          <span className="hidden sm:inline">Import</span>
         </button>
         <button
           onClick={handleSaveProject}
-          className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-br from-[var(--color-accent-500)] to-[var(--color-accent-600)] px-4 py-2 text-sm font-semibold text-white hover:shadow-lg transition-all hover:translate-y-[-1px] active:translate-y-[0]"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-br from-[var(--color-accent-500)] to-[var(--color-accent-600)] px-3 py-1.5 text-xs font-semibold text-white hover:shadow-lg transition-all"
+          title="Save Project"
         >
           <span>💾</span>
-          Save
+          <span className="hidden sm:inline">Save</span>
         </button>
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-border-medium)] bg-[var(--color-bg-primary)] px-4 py-2 text-sm font-semibold text-[var(--color-text-primary)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border-medium)] bg-[var(--color-bg-primary)] px-3 py-1.5 text-xs font-semibold text-[var(--color-text-primary)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
+          title="Load Project"
         >
           <span>📂</span>
-          Load
+          <span className="hidden sm:inline">Load</span>
         </button>
         <input
           ref={fileInputRef}
@@ -167,10 +149,11 @@ export function AppHeader() {
         />
         <button
           onClick={() => openModal('export')}
-          className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-border-medium)] bg-[var(--color-bg-primary)] px-4 py-2 text-sm font-semibold text-[var(--color-text-primary)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border-medium)] bg-[var(--color-bg-primary)] px-3 py-1.5 text-xs font-semibold text-[var(--color-text-primary)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
+          title="Export Layout"
         >
           <span>📥</span>
-          Export
+          <span className="hidden sm:inline">Export</span>
         </button>
         <ThemeToggle />
       </div>

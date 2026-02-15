@@ -1,5 +1,5 @@
 import type { Musician } from '@/types/musician.ts';
-import type { SeatPosition, LayoutConfig } from '@/types/layout.ts';
+import type { SeatPosition, LayoutConfig, Wedge } from '@/types/layout.ts';
 
 export interface ProjectSnapshot {
   version: string;
@@ -9,6 +9,7 @@ export interface ProjectSnapshot {
   musicians: Musician[];
   seatPositions: Record<string, SeatPosition>;
   layoutConfig: LayoutConfig;
+  wedges?: Record<string, Wedge>;
 }
 
 const CURRENT_VERSION = '1.0.0';
@@ -18,7 +19,8 @@ export function serializeProject(
   layoutType: string,
   musicians: Record<string, Musician>,
   seatPositions: Record<string, SeatPosition>,
-  layoutConfig: LayoutConfig
+  layoutConfig: LayoutConfig,
+  wedges?: Record<string, Wedge>
 ): ProjectSnapshot {
   return {
     version: CURRENT_VERSION,
@@ -28,6 +30,7 @@ export function serializeProject(
     musicians: Object.values(musicians),
     seatPositions,
     layoutConfig,
+    wedges: wedges && Object.keys(wedges).length > 0 ? wedges : undefined,
   };
 }
 
